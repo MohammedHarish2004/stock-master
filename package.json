@@ -1,0 +1,59 @@
+{
+  "name": "stock-master",
+  "version": "1.0.0",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "start": "concurrently -k \"npm run dev --prefix client\" \"electron .\"",
+    "dev": "concurrently -k \"npm run dev --prefix client\" \"electron .\"",
+    "server": "node server/server.js",
+    "build": "npm run build --prefix client",
+    "dist": "set \"CSC_SKIP=true\" && npm run build && electron-builder",
+    "postinstall": "electron-builder install-app-deps"
+  },
+  "build": {
+    "appId": "com.stockmaster.uae",
+    "productName": "Stock Master",
+    "directories": {
+      "output": "dist_electron"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "server/**/*",
+      "client/dist/**/*",
+      "build/CD_Logo.png",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": "nsis",
+      "icon": "build/CD_Logo.png",
+      "forceCodeSigning": false,
+      "cscLink": null
+    },
+    "extraResources": []
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "concurrently": "^9.2.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^16.6.1",
+    "electron-is-dev": "^3.0.1",
+    "express": "^4.22.2",
+    "jsonwebtoken": "^9.0.3",
+    "socket.io": "^4.8.3",
+    "sqlite3": "^6.0.1"
+  },
+  "devDependencies": {
+    "@electron/rebuild": "^4.2.0",
+    "electron": "^41.7.1",
+    "electron-builder": "^26.15.3",
+    "nodemon": "^3.1.14"
+  },
+  "description": ""
+}
