@@ -60,7 +60,7 @@ const menuTemplate = [
             type: 'info',
             title: 'About Stock Master',
             message: 'Stock Master',
-            detail: 'Developed by Bright Solution for managing Stock Master efficiently.\n\nhttps://bright-uae.com'
+            detail: 'Developed by Bright Solution for managing Stock efficiently.\n\nhttps://bright-uae.com'
           });
         }
       }
