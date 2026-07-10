@@ -8,10 +8,11 @@
     "dev": "concurrently -k \"npm run dev --prefix client\" \"electron .\"",
     "server": "node server/server.js",
     "build": "npm run build --prefix client",
-    "dist": "set \"CSC_SKIP=true\" && npm run build && electron-builder",
+    "dist": "set \"CSC_SKIP=true\" && npm run build && npx electron-builder",
     "postinstall": "electron-builder install-app-deps"
   },
   "build": {
+    "npmRebuild": false,
     "appId": "com.stockmaster.uae",
     "productName": "Stock Master",
     "directories": {
@@ -25,9 +26,9 @@
       "build/CD_Logo.png",
       "package.json"
     ],
-    "asar": true,
+    "asar": false,
     "win": {
-      "target": "nsis",
+      "target": "nsis", 
       "icon": "build/CD_Logo.png",
       "forceCodeSigning": false,
       "cscLink": null
@@ -51,7 +52,7 @@
   },
   "devDependencies": {
     "@electron/rebuild": "^4.2.0",
-    "electron": "^41.7.1",
+    "electron": "41.7.1",
     "electron-builder": "^26.15.3",
     "nodemon": "^3.1.14"
   },

@@ -14,7 +14,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Dynamic import — loaded inside startServer() after BASE_STORAGE_PATH is set
+if (!isDev) {
+  process.env.NODE_ENV = 'production';
+}
 
 let mainWindow;
 let tray = null;
@@ -92,12 +94,9 @@ function createWindow() {
     },
   });
   mainWindow.once('ready-to-show', () => mainWindow.show());
-  if (!isDev) {
-    process.env.NODE_ENV = 'production';
-  }
   const port = process.env.PORT || 5000;
   mainWindow.loadURL(isDev ? `http://localhost:5173` : `http://localhost:${port}`);
-  
+
   // Duplicate window creation removed – original createWindow with appIcon retained
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     shell.openExternal(url);
@@ -126,7 +125,7 @@ function createWindow() {
 
 async function startServer() {
   console.log('Starting internal server...');
-  
+
   try {
     await import('./server/server.js');
   } catch (err) {
@@ -139,27 +138,28 @@ app.on('ready', async () => {
 
   setTimeout(() => {
     createWindow();
-    
+
     // System Tray Setup
     try {
       tray = new Tray(iconPath);
     } catch (e) {
       tray = new Tray(nativeImage.createEmpty());
     }
-    
+
     const contextMenu = Menu.buildFromTemplate([
       { label: 'Open Stock Master', click: () => { if (mainWindow) mainWindow.show(); } },
       { type: 'separator' },
-      { label: 'Quit Server completely', click: () => {
+      {
+        label: 'Quit Server completely', click: () => {
           isQuitting = true;
           app.quit();
         }
       }
     ]);
-    
+
     tray.setToolTip('Stock Master Server (Running on LAN)');
     tray.setContextMenu(contextMenu);
-    
+
     tray.on('double-click', () => {
       if (mainWindow) mainWindow.show();
     });
