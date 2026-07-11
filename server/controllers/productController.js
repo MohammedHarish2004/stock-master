@@ -24,9 +24,9 @@ export const createProduct = async (req, res) => {
   try {
     const { productName, category, brand, costPrice, defaultSellingPrice, stockQty } = req.body;
     
-    // Check if exact same product (same name AND same category) exists
+    // Check if exact same product (same name AND same category) exists (case-insensitive)
     const existing = await get(
-      'SELECT * FROM products WHERE productName = ? AND category = ?',
+      'SELECT * FROM products WHERE LOWER(productName) = LOWER(?) AND LOWER(category) = LOWER(?)',
       [productName, category]
     );
     

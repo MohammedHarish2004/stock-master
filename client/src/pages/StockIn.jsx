@@ -75,6 +75,10 @@ const StockIn = () => {
     }
   };
 
+  // Get unique lists for autocomplete
+  const uniqueProductNames = [...new Set(products.map(p => p.productName).filter(Boolean))];
+  const uniqueBrands = [...new Set(products.map(p => p.brand).filter(Boolean))];
+
   return (
     <div className="max-w-4xl mx-auto">
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -103,8 +107,8 @@ const StockIn = () => {
                 placeholder="e.g. iPhone 15 Pro Max"
               />
               <datalist id="recentproducts">
-                {products.map(p => (
-                  <option key={p.id} value={p.productName} />
+                {uniqueProductNames.map((name, idx) => (
+                  <option key={idx} value={name} />
                 ))}
               </datalist>
             </div>
@@ -131,11 +135,17 @@ const StockIn = () => {
                 type="text"
                 name="brand"
                 required
+                list='recentbrand'
                 value={formData.brand}
                 onChange={handleChange}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] transition-colors focus:bg-white outline-none"
                 placeholder="e.g. Apple"
               />
+              <datalist id="recentbrand">
+                {uniqueBrands.map((brand, idx) => (
+                  <option key={idx} value={brand} />
+                ))}
+              </datalist>
             </div>
 
             <div>
