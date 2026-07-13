@@ -3,6 +3,7 @@ import { Search, Edit, Trash2, Package, PlusCircle, Filter, FileText, X } from '
 import toast from 'react-hot-toast';
 import Pagination from '../components/Pagination';
 import { socket } from '../socket';
+import ExcelExport from '../components/ExcelEport';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -284,6 +285,7 @@ const Products = () => {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
+
         </div>
       </div>
 
@@ -301,6 +303,8 @@ const Products = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
+                <ExcelExport />
+
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50/80 backdrop-blur-sm sticky top-0">
                 <tr>
