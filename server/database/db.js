@@ -82,6 +82,30 @@ const initDb = async () => {
       FOREIGN KEY(productId) REFERENCES products(id)
     )`);
 
+    // Create Activation table
+    db.run(`CREATE TABLE IF NOT EXISTS activation (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      activationKey TEXT,
+      machineId TEXT,
+      activatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    // Create Company Info table
+    db.run(`CREATE TABLE IF NOT EXISTS company_info (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT,
+      address TEXT,
+      phone TEXT
+    )`);
+
+    // Seed default company info if empty
+    db.get("SELECT * FROM company_info", (err, row) => {
+      if (!row) {
+        db.run("INSERT INTO company_info (name, address, phone) VALUES (?, ?, ?)", 
+          ['Your Company Name', '123 Main Street', '+971 50 123 4567']);
+      }
+    });
+
     // Check if admin exists
     db.get("SELECT * FROM admin", async (err, row) => {
       if (!row) {

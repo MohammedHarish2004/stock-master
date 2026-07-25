@@ -49,9 +49,9 @@ const menuTemplate = [
     label: 'Help',
     submenu: [
       {
-        label: 'Visit bright-uae.com',
+        label: 'Visit harrisunseen.vercel.app',
         click: () => {
-          shell.openExternal('https://bright-uae.com');
+          shell.openExternal('https://harrisunseen.vercel.app');
         }
       },
       { type: 'separator' },
@@ -62,7 +62,7 @@ const menuTemplate = [
             type: 'info',
             title: 'About Stock Master',
             message: 'Stock Master',
-            detail: 'Developed by Bright Solution for managing Stock efficiently.\n\nhttps://bright-uae.com'
+            detail: 'Developed by Harris Unseen for managing Stock efficiently.\n\nhttps://harrisunseen.vercel.app'
           });
         }
       }

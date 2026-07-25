@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { PackagePlus, Save, RotateCcw } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -149,7 +149,7 @@ const StockIn = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Cost Price (AED)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Cost Price (₹)</label>
               <input
                 type="number"
                 name="costPrice"
@@ -164,7 +164,7 @@ const StockIn = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Default Selling Price (AED)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Default Selling Price (₹)</label>
               <input
                 type="number"
                 name="defaultSellingPrice"
@@ -190,7 +190,7 @@ const StockIn = () => {
                 className="w-full md:w-1/2 px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors focus:bg-white outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0"
               />
-              <p className="mt-2 text-xs text-gray-500">Same product name + same category → adds to stock. Different category → creates a new product.</p>
+              <p className="mt-2 text-xs text-gray-500">Same product name + same category â†’ adds to stock. Different category â†’ creates a new product.</p>
             </div>
           </div>
 

@@ -16,6 +16,8 @@ import productRoutes from './routes/productRoutes.js';
 import saleRoutes from './routes/saleRoutes.js';
 import backupRoutes from './routes/backupRoutes.js';
 import categoryRoutes from './routes/categoryRoutes.js';
+import activationRoutes from './routes/activationRoutes.js';
+import companyRoutes from './routes/companyRoutes.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -41,6 +43,8 @@ app.use('/api/products', productRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/backup', backupRoutes);
+app.use('/api/activation', activationRoutes);
+app.use('/api/company', companyRoutes);
 
 // Serve frontend in production
 if (process.env.NODE_ENV === 'production') {

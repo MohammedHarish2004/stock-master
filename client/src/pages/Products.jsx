@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import Pagination from '../components/Pagination';
 import { socket } from '../socket';
 import ExcelExport from '../components/ExcelEport';
+import logo from '../assets/logo.png';
 
 const Products = () => {
   const [products, setProducts] = useState([]);
@@ -13,7 +14,7 @@ const Products = () => {
   const [stockSort, setStockSort] = useState('Default');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
-  
+
   // For Delete Confirmation
   const [showConfirm, setShowConfirm] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
@@ -40,8 +41,8 @@ const Products = () => {
 
   useEffect(() => {
     fetchProducts();
-    fetch('/api/categories').then(r => r.json()).then(setCategories).catch(() => {});
-    
+    fetch('/api/categories').then(r => r.json()).then(setCategories).catch(() => { });
+
     socket.on('product-updated', fetchProducts);
     return () => {
       socket.off('product-updated', fetchProducts);
@@ -77,13 +78,13 @@ const Products = () => {
     try {
       const newStock = selectedProduct.stockQty + parseInt(addStockAmount);
       const updatedProduct = { ...selectedProduct, stockQty: newStock };
-      
+
       const res = await fetch(`/api/products/${selectedProduct.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedProduct)
       });
-      
+
       if (res.ok) {
         toast.success('Stock added successfully');
         setProducts(products.map(p => p.id === selectedProduct.id ? updatedProduct : p));
@@ -104,18 +105,18 @@ const Products = () => {
       return;
     }
     try {
-      const updatedProduct = { 
-        ...selectedProduct, 
-        costPrice: parseFloat(editCost), 
-        defaultSellingPrice: parseFloat(editPrice) 
+      const updatedProduct = {
+        ...selectedProduct,
+        costPrice: parseFloat(editCost),
+        defaultSellingPrice: parseFloat(editPrice)
       };
-      
+
       const res = await fetch(`/api/products/${selectedProduct.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updatedProduct)
       });
-      
+
       if (res.ok) {
         toast.success('Prices updated successfully');
         setProducts(products.map(p => p.id === selectedProduct.id ? updatedProduct : p));
@@ -203,8 +204,8 @@ const Products = () => {
 
   const filteredProducts = products.filter(p => {
     const matchesSearch = p.productName.toLowerCase().includes(search.toLowerCase()) ||
-                          p.brand.toLowerCase().includes(search.toLowerCase()) ||
-                          p.category.toLowerCase().includes(search.toLowerCase());
+      p.brand.toLowerCase().includes(search.toLowerCase()) ||
+      p.category.toLowerCase().includes(search.toLowerCase());
     const matchesCategory = categoryFilter === 'All' || p.category === categoryFilter;
     return matchesSearch && matchesCategory;
   });
@@ -231,61 +232,71 @@ const Products = () => {
   return (
     <div className="space-y-6">
       {/* Header and Search */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between items-center gap-4">
-        <div className="flex items-center space-x-3">
-          <div className="bg-[#00868e]/10 p-2 rounded-xl">
-            <Package className="text-[#00868e] w-6 h-6" />
-          </div>
-          <h2 className="text-xl font-bold text-gray-800">Inventory Management</h2>
-        </div>
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
 
-        <div className="w-full md:w-auto flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-        <div className="text-md font-bold flex items-center">
-          Total Products : {filteredProducts.length}
-        </div>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Filter className="h-4 w-4 text-gray-400" />
+          {/* Title */}
+          <div className="lg:col-span-3 flex items-center gap-3">
+            <div className="bg-[#00868e]/10 p-2 rounded-xl">
+              <Package className="text-[#00868e] w-6 h-6" />
             </div>
-            <select
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              className="block w-full pl-9 pr-8 py-2 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-700 focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm transition-colors appearance-none"
-            >
-              {categoryOptions.map(c => (
-                <option key={c} value={c}>{c === 'All' ? 'All Categories' : c}</option>
-              ))}
-            </select>
+            <h2 className="text-xl font-bold text-gray-800">Inventory Management</h2>
           </div>
 
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Filter className="h-4 w-4 text-gray-400" />
-            </div>
-            <select
-              value={stockSort}
-              onChange={(e) => setStockSort(e.target.value)}
-              className="block w-full pl-9 pr-8 py-2 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-700 focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm transition-colors appearance-none"
-            >
-              <option value="Default">Sort Stock</option>
-              <option value="HighToLow">Stock: High to Low</option>
-              <option value="LowToHigh">Stock: Low to High</option>
-            </select>
-          </div>
-          
-          <div className="relative w-full sm:w-64">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              type="text"
-              className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm transition-colors"
-              placeholder="Search products..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          {/* Total */}
+          <div className="lg:col-span-2">
+            <span className="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-semibold">
+              Total : {filteredProducts.length}
+            </span>
           </div>
 
+          {/* Category */}
+          <div className="lg:col-span-2">
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 border border-gray-200 rounded-xl bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] appearance-none"
+              >
+                {categoryOptions.map((c) => (
+                  <option key={c} value={c}>
+                    {c === "All" ? "All Categories" : c}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Stock Sort */}
+          <div className="lg:col-span-2">
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <select
+                value={stockSort}
+                onChange={(e) => setStockSort(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 border border-gray-200 rounded-xl bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] appearance-none"
+              >
+                <option value="Default">Sort Stock</option>
+                <option value="HighToLow">Stock: High to Low</option>
+                <option value="LowToHigh">Stock: Low to High</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className="lg:col-span-3">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search products..."
+                className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl bg-gray-50 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e]"
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -293,7 +304,7 @@ const Products = () => {
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-64">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+            <img src={logo} alt="Loading..." className="h-12 w-auto animate-pulse" />
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="p-12 text-center text-gray-500">
@@ -303,15 +314,15 @@ const Products = () => {
           </div>
         ) : (
           <div className="overflow-x-auto">
-                <ExcelExport />
+            <ExcelExport />
 
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50/80 backdrop-blur-sm sticky top-0">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Product</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cost (AED)</th>
-                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Price (AED)</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cost (₹)</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Price (₹)</th>
                   <th className="px-6 py-4 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">Stock</th>
                   <th className="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
@@ -327,33 +338,32 @@ const Products = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{p.costPrice.toFixed(2)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{p.defaultSellingPrice.toFixed(2)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-center">
-                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${
-                        p.stockQty === 0 ? 'bg-red-200 text-red-800' : p.stockQty < 4 ? 'bg-orange-200 text-orange-800' : 'bg-green-100 text-green-800'
-                      }`}>
+                      <span className={`px-3 py-1 inline-flex text-xs leading-5 font-bold rounded-full ${p.stockQty === 0 ? 'bg-red-200 text-red-800' : p.stockQty < 4 ? 'bg-orange-200 text-orange-800' : 'bg-green-100 text-green-800'
+                        }`}>
                         {p.stockQty}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
-                        <button 
+                        <button
                           onClick={() => viewSales(p)}
                           title="View Sales"
                           className="text-indigo-600 hover:bg-indigo-50 p-2 rounded-lg transition-colors"
                         >
                           <FileText className="w-5 h-5" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => {
                             setSelectedProduct(p);
                             setAddStockAmount('');
                             setShowAddStock(true);
-                          }} 
+                          }}
                           title="Add Stock"
                           className="text-green-600 hover:bg-green-50 p-2 rounded-lg transition-colors"
                         >
                           <PlusCircle className="w-5 h-5" />
                         </button>
-                        <button 
+                        <button
                           onClick={() => openEditProduct(p)}
                           title="Edit Product"
                           className="text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-colors"
@@ -370,10 +380,10 @@ const Products = () => {
               </tbody>
             </table>
             {totalPages > 1 && (
-              <Pagination 
-                currentPage={currentPage} 
-                totalPages={totalPages} 
-                onPageChange={setCurrentPage} 
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={setCurrentPage}
               />
             )}
           </div>
@@ -397,13 +407,13 @@ const Products = () => {
               />
             </div>
             <div className="flex space-x-3">
-              <button 
+              <button
                 onClick={() => setShowAddStock(false)}
                 className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleAddStock}
                 className="flex-1 px-4 py-2 bg-primary text-white font-medium rounded-xl hover:bg-primary/90 transition-colors"
               >
@@ -427,10 +437,10 @@ const Products = () => {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            
+
             <div className="max-h-96 overflow-y-auto">
               {salesLoading ? (
-                <div className="flex justify-center p-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
+                <div className="flex justify-center p-8"><img src={logo} alt="Loading..." className="h-10 w-auto animate-pulse" /></div>
               ) : productSales.length === 0 ? (
                 <p className="text-center text-gray-500 p-8">No sales found for this product.</p>
               ) : (
@@ -438,10 +448,10 @@ const Products = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Date</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Invoice/Job</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Invoice No</th>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
                       <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Qty</th>
-                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Total (AED)</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Total (₹)</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
@@ -450,7 +460,6 @@ const Products = () => {
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{new Date(sale.saleDate).toLocaleDateString()}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600">
                           <div>{sale.invoiceNo}</div>
-                          {sale.jobNo && <div className="text-xs text-indigo-600 font-medium">Job: {sale.jobNo}</div>}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">{sale.customerName}</td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-medium">{sale.qty}</td>
@@ -462,7 +471,7 @@ const Products = () => {
               )}
             </div>
             <div className="mt-6 flex justify-end">
-              <button 
+              <button
                 onClick={() => setShowSales(false)}
                 className="px-6 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
               >
@@ -484,12 +493,12 @@ const Products = () => {
             <div className="grid grid-cols-2 gap-4 mb-5">
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
-                <input type="text" value={editForm.productName || ''} onChange={e => setEditForm(f => ({...f, productName: e.target.value}))}
+                <input type="text" value={editForm.productName || ''} onChange={e => setEditForm(f => ({ ...f, productName: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
-                <select value={editForm.category || ''} onChange={e => setEditForm(f => ({...f, category: e.target.value}))}
+                <select value={editForm.category || ''} onChange={e => setEditForm(f => ({ ...f, category: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary appearance-none">
                   <option value="" disabled>Select category</option>
                   {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
@@ -497,22 +506,22 @@ const Products = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
-                <input type="text" value={editForm.brand || ''} onChange={e => setEditForm(f => ({...f, brand: e.target.value}))}
+                <input type="text" value={editForm.brand || ''} onChange={e => setEditForm(f => ({ ...f, brand: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cost Price (AED)</label>
-                <input type="number" step="0.01" min="0" value={editForm.costPrice || ''} onChange={e => setEditForm(f => ({...f, costPrice: e.target.value}))}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cost Price (₹)</label>
+                <input type="number" step="0.01" min="0" value={editForm.costPrice || ''} onChange={e => setEditForm(f => ({ ...f, costPrice: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price (AED)</label>
-                <input type="number" step="0.01" min="0" value={editForm.defaultSellingPrice || ''} onChange={e => setEditForm(f => ({...f, defaultSellingPrice: e.target.value}))}
+                <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price (₹)</label>
+                <input type="number" step="0.01" min="0" value={editForm.defaultSellingPrice || ''} onChange={e => setEditForm(f => ({ ...f, defaultSellingPrice: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
               </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Stock Qty</label>
-                <input type="number" min="0" value={editForm.stockQty || ''} onChange={e => setEditForm(f => ({...f, stockQty: e.target.value}))}
+                <input type="number" min="0" value={editForm.stockQty || ''} onChange={e => setEditForm(f => ({ ...f, stockQty: e.target.value }))}
                   className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
               </div>
             </div>
@@ -531,7 +540,7 @@ const Products = () => {
             <h3 className="text-lg font-bold text-gray-900 mb-4">Edit Prices: {selectedProduct?.productName}</h3>
             <div className="space-y-4 mb-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cost Price (AED)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Cost Price (₹)</label>
                 <input
                   type="number"
                   step="0.01"
@@ -542,7 +551,7 @@ const Products = () => {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price (AED)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Selling Price (₹)</label>
                 <input
                   type="number"
                   step="0.01"
@@ -554,13 +563,13 @@ const Products = () => {
               </div>
             </div>
             <div className="flex space-x-3">
-              <button 
+              <button
                 onClick={() => setShowEditPrice(false)}
                 className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleEditPrice}
                 className="flex-1 px-4 py-2 bg-primary text-white font-medium rounded-xl hover:bg-primary/90 transition-colors"
               >
@@ -583,13 +592,13 @@ const Products = () => {
               This action cannot be undone. This will permanently delete the product from the inventory.
             </p>
             <div className="flex space-x-3">
-              <button 
+              <button
                 onClick={() => setShowConfirm(false)}
                 className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 font-medium rounded-xl hover:bg-gray-200 transition-colors"
               >
                 Cancel
               </button>
-              <button 
+              <button
                 onClick={handleDelete}
                 className="flex-1 px-4 py-2 bg-danger text-white font-medium rounded-xl hover:bg-red-600 transition-colors shadow-sm shadow-red-200"
               >

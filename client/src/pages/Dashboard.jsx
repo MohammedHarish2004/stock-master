@@ -1,15 +1,20 @@
 import { useState, useEffect } from 'react';
-import { Package, Hash, DollarSign, Truck, TrendingDown, ArrowRight, Download, Tags } from 'lucide-react';
+import { Package, Hash, DollarSign, Truck, TrendingDown, ArrowRight, Download, Tags, Edit3, Check, X, Building } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { socket } from '../socket';
+import logo from '../assets/logo.png';
 
 const Dashboard = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [company, setCompany] = useState(null);
+  const [editingCompany, setEditingCompany] = useState(false);
+  const [companyForm, setCompanyForm] = useState({ name: '', address: '', phone: '' });
 
   useEffect(() => {
     fetchStats();
+    fetchCompany();
     
     socket.on('product-updated', fetchStats);
     socket.on('sale-updated', fetchStats);
@@ -41,6 +46,38 @@ const Dashboard = () => {
     }
   };
 
+  const fetchCompany = async () => {
+    try {
+      const res = await fetch('/api/company');
+      if (res.ok) {
+        const data = await res.json();
+        setCompany(data);
+        setCompanyForm(data);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const handleUpdateCompany = async () => {
+    try {
+      const res = await fetch('/api/company', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(companyForm)
+      });
+      if (res.ok) {
+        setCompany(companyForm);
+        setEditingCompany(false);
+        toast.success('Company info updated');
+      } else {
+        toast.error('Failed to update company info');
+      }
+    } catch (error) {
+      toast.error('Network error');
+    }
+  };
+
   const fetchStats = async () => {
     try {
       const res = await fetch('/api/sales/dashboard-stats');
@@ -59,8 +96,8 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#00868e]"></div>
+      <div className="flex items-center justify-center h-[calc(100vh-100px)]">
+        <img src={logo} alt="Loading..." className="h-12 w-auto animate-pulse opacity-50" />
       </div>
     );
   }
@@ -68,7 +105,7 @@ const Dashboard = () => {
   const statCards = [
     { title: 'Total Products', value: stats?.totalProducts || 0, icon: Package, color: 'text-blue-500', bg: 'bg-blue-100' },
     { title: 'Total Categories', value: stats?.totalCategory || 0, icon: Tags, color: 'text-purple-500', bg: 'bg-purple-100' },
-    { title: "Today's Sales", value: `AED ${(stats?.todaySales || 0).toFixed(2)}`, icon: DollarSign, color: 'text-success', bg: 'bg-green-100' },
+    { title: "Today's Sales", value: `₹ ${(stats?.todaySales || 0).toFixed(2)}`, icon: DollarSign, color: 'text-success', bg: 'bg-green-100' },
     { title: 'Delivered', value: stats?.pendingDeliveries || 0, icon: Truck, color: 'text-warning', bg: 'bg-orange-100' },
   ];
 
@@ -101,6 +138,65 @@ const Dashboard = () => {
         ))}
       </div>
 
+      {/* Company Info */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+          <h3 className="text-lg font-bold text-gray-800 flex items-center">
+            <Building className="w-5 h-5 mr-2 text-[#00868e]" />
+            Store Details (Invoice Header)
+          </h3>
+          {!editingCompany ? (
+            <button 
+              onClick={() => setEditingCompany(true)}
+              className="text-sm flex items-center text-gray-600 hover:text-[#00868e] transition-colors"
+            >
+              <Edit3 className="w-4 h-4 mr-1" /> Edit
+            </button>
+          ) : (
+            <div className="flex space-x-2">
+              <button 
+                onClick={() => { setEditingCompany(false); setCompanyForm(company); }}
+                className="text-sm flex items-center text-gray-500 hover:text-gray-700 transition-colors"
+              >
+                <X className="w-4 h-4 mr-1" /> Cancel
+              </button>
+              <button 
+                onClick={handleUpdateCompany}
+                className="text-sm flex items-center text-white bg-[#00868e] px-3 py-1 rounded hover:bg-[#00737a] transition-colors"
+              >
+                <Check className="w-4 h-4 mr-1" /> Save
+              </button>
+            </div>
+          )}
+        </div>
+        <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Company Name</label>
+            {editingCompany ? (
+              <input type="text" value={companyForm.name || ''} onChange={e => setCompanyForm({...companyForm, name: e.target.value})} className="w-full px-3 py-2 border rounded focus:ring-[#00868e] focus:border-[#00868e] text-sm" />
+            ) : (
+              <div className="font-medium text-gray-900">{company?.name || '-'}</div>
+            )}
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Address</label>
+            {editingCompany ? (
+              <input type="text" value={companyForm.address || ''} onChange={e => setCompanyForm({...companyForm, address: e.target.value})} className="w-full px-3 py-2 border rounded focus:ring-[#00868e] focus:border-[#00868e] text-sm" />
+            ) : (
+              <div className="font-medium text-gray-900">{company?.address || '-'}</div>
+            )}
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-400 uppercase tracking-wider mb-1">Phone</label>
+            {editingCompany ? (
+              <input type="text" value={companyForm.phone || ''} onChange={e => setCompanyForm({...companyForm, phone: e.target.value})} className="w-full px-3 py-2 border rounded focus:ring-[#00868e] focus:border-[#00868e] text-sm" />
+            ) : (
+              <div className="font-medium text-gray-900">{company?.phone || '-'}</div>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Latest Sales */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
@@ -117,7 +213,7 @@ const Dashboard = () => {
                   <div key={sale.id} className="p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex justify-between items-center mb-1">
                       <h4 className="font-semibold text-gray-800">{sale.customerName || 'Walk-in Customer'}</h4>
-                      <span className="font-bold text-gray-900">AED {sale.grandTotal.toFixed(2)}</span>
+                      <span className="font-bold text-gray-900">₹ {sale.grandTotal.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center text-sm text-gray-500">
                       <span>{sale.invoiceNo}</span>
@@ -158,7 +254,7 @@ const Dashboard = () => {
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-sm text-gray-500">
-                      <span>{product.brand} • {product.category}</span>
+                      <span>{product.brand} â€¢ {product.category}</span>
                     </div>
                   </div>
                 ))}

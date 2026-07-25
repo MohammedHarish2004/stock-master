@@ -1,5 +1,6 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import toast from 'react-hot-toast';
+import logo from '../assets/logo.png';
 
 const AuthContext = createContext();
 
@@ -64,7 +65,13 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ user, login, logout, loading }}>
-      {!loading && children}
+      {loading ? (
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+          <img src={logo} alt="Loading..." className="h-16 w-auto animate-pulse drop-shadow-md" />
+        </div>
+      ) : (
+        children
+      )}
     </AuthContext.Provider>
   );
 };

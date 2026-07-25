@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { ShoppingCart, Plus, Trash2, Search, Check, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { socket } from '../socket';
@@ -10,7 +10,6 @@ const Sales = () => {
   const [customerDetails, setCustomerDetails] = useState({
     customerName: '',
     phone: '',
-    jobNo: '',
     deliveryDate: new Date().toISOString().split('T')[0], // Default today
   });
 
@@ -124,11 +123,6 @@ const Sales = () => {
       return;
     }
 
-    if (!customerDetails.jobNo) {
-      toast.error('Job Number is required');
-      return;
-    }
-
     setIsSaving(true);
     try {
       const saleData = {
@@ -150,7 +144,6 @@ const Sales = () => {
         setCustomerDetails({
           customerName: '',
           phone: '',
-          jobNo: '',
           deliveryDate: new Date().toISOString().split('T')[0]
         });
         setCart([]);
@@ -173,7 +166,7 @@ const Sales = () => {
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
       
       {/* Left Column: Customer & Product Selection */}
-      <div className="lg:col-span-7 space-y-6">
+      <div className="lg:col-span-8 space-y-6">
         
         {/* Customer Details */}
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
@@ -181,7 +174,7 @@ const Sales = () => {
             <span className="bg-[#00868e]/10 w-8 h-8 rounded-lg flex items-center justify-center mr-2 text-[#00868e] font-bold">1</span>
             Customer Details
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name *</label>
               <input
@@ -202,18 +195,6 @@ const Sales = () => {
                 onChange={handleCustomerChange}
                 className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] transition-colors outline-none"
                 placeholder="Phone"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Job No *</label>
-              <input
-                type="text"
-                name="jobNo"
-                required
-                value={customerDetails.jobNo}
-                onChange={handleCustomerChange}
-                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] transition-colors outline-none"
-                placeholder="Job No"
               />
             </div>
             <div>
@@ -260,10 +241,10 @@ const Sales = () => {
                     >
                       <div>
                         <div className="font-medium text-gray-900">{p.productName}</div>
-                        <div className="text-xs text-gray-500">{p.brand} • {p.category}</div>
+                        <div className="text-xs text-gray-500">{p.brand} | {p.category}</div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-gray-900">AED {p.defaultSellingPrice}</div>
+                        <div className="font-bold text-gray-900">₹ {p.defaultSellingPrice}</div>
                         <div className={`text-xs font-bold ${p.stockQty <= 5 ? 'text-warning' : 'text-success'}`}>{p.stockQty} in stock</div>
                       </div>
                     </div>
@@ -283,12 +264,12 @@ const Sales = () => {
                   <h4 className="font-bold text-gray-900">{selectedProduct.productName}</h4>
                   <p className="text-sm text-gray-500">Available Stock: <span className="font-bold text-[#00868e]">{selectedProduct.stockQty}</span></p>
                 </div>
-                <button onClick={() => setSelectedProduct(null)} className="text-gray-400 hover:text-gray-600">×</button>
+                <button onClick={() => setSelectedProduct(null)} className="text-gray-400 hover:text-gray-600">x</button>
               </div>
               
               <div className="flex flex-wrap items-end gap-4">
                 <div className="flex-1 min-w-[120px]">
-                  <label className="block text-xs font-medium text-gray-600 mb-1">Sale Price (AED)</label>
+                  <label className="block text-xs font-medium text-gray-600 mb-1">Sale Price (₹)</label>
                   <input
                     type="number"
                     min="0"
@@ -311,7 +292,7 @@ const Sales = () => {
                 </div>
                 <div className="w-28 text-right bg-white p-2 rounded-lg border border-gray-100 hidden sm:block">
                   <div className="text-xs font-medium text-gray-500">Total</div>
-                  <div className="font-bold text-gray-900">AED {(Number(salePrice) * Number(qty) || 0).toFixed(2)}</div>
+                  <div className="font-bold text-gray-900">₹ {(Number(salePrice) * Number(qty) || 0).toFixed(2)}</div>
                 </div>
                 <button 
                   onClick={addToCart}
@@ -326,7 +307,7 @@ const Sales = () => {
       </div>
 
       {/* Right Column: Cart & Summary */}
-      <div className="lg:col-span-5">
+      <div className="lg:col-span-4">
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full sticky top-24">
           <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-2xl">
             <h3 className="text-lg font-bold text-gray-800 flex items-center">
@@ -351,11 +332,11 @@ const Sales = () => {
                       <div className="flex-1 pr-4">
                         <h4 className="font-medium text-gray-900 text-sm">{item.productName}</h4>
                         <div className="text-xs text-gray-500 mt-1">
-                          AED {item.salePrice} × {item.qty}
+                          ₹ {item.salePrice} - {item.qty}nos 
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="font-bold text-gray-900 text-sm">AED {item.total.toFixed(2)}</div>
+                        <div className="font-bold text-gray-900 text-sm">₹ {item.total.toFixed(2)}</div>
                         <button 
                           onClick={() => removeFromCart(index)}
                           className="text-gray-300 hover:text-danger mt-1 transition-colors opacity-0 group-hover:opacity-100"
@@ -373,7 +354,7 @@ const Sales = () => {
           <div className="p-6 border-t border-gray-100 bg-gray-50/50 rounded-b-2xl">
             <div className="flex justify-between items-center mb-6">
               <span className="text-gray-600 font-medium">Grand Total</span>
-              <span className="text-3xl font-bold text-gray-900">AED {grandTotal.toFixed(2)}</span>
+              <span className="text-3xl font-bold text-gray-900">₹ {grandTotal.toFixed(2)}</span>
             </div>
             <button
               onClick={handleSaveSale}

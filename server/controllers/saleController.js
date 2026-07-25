@@ -3,7 +3,7 @@ import { io } from '../server.js';
 
 export const getSales = async (req, res) => {
   try {
-    const { customer, jobNo, product } = req.query;
+    const { customer, invoiceNo, product } = req.query;
 
     let baseQuery = `
       SELECT s.*, GROUP_CONCAT(si.productName) as productNames 
@@ -19,9 +19,9 @@ export const getSales = async (req, res) => {
       params.push(`%${customer}%`, `%${customer}%`);
     }
 
-    if (jobNo) {
-      whereClauses.push(`s.jobNo LIKE ?`);
-      params.push(`%${jobNo}%`);
+    if (invoiceNo) {
+      whereClauses.push(`s.invoiceNo LIKE ?`);
+      params.push(`%${invoiceNo}%`);
     }
 
     if (product) {
@@ -59,7 +59,7 @@ export const getSaleById = async (req, res) => {
 
 export const createSale = async (req, res) => {
   try {
-    const { customerName, phone, deliveryDate, jobNo, items, grandTotal } = req.body;
+    const { customerName, phone, deliveryDate, items, grandTotal } = req.body;
 
     // Generate Invoice Number
     const lastSale = await get('SELECT invoiceNo FROM sales ORDER BY id DESC LIMIT 1');
@@ -76,9 +76,9 @@ export const createSale = async (req, res) => {
     await run('BEGIN TRANSACTION');
 
     // 1. Insert Sale
-    const saleResult = await run(`INSERT INTO sales (invoiceNo, jobNo, customerName, phone, deliveryDate, grandTotal) 
-      VALUES (?, ?, ?, ?, ?, ?)`,
-      [invoiceNo, jobNo, customerName, phone, deliveryDate, grandTotal]
+    const saleResult = await run(`INSERT INTO sales (invoiceNo, customerName, phone, deliveryDate, grandTotal) 
+      VALUES (?, ?, ?, ?, ?)`,
+      [invoiceNo, customerName, phone, deliveryDate, grandTotal]
     );
     const saleId = saleResult.lastID;
 
