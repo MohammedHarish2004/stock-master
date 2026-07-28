@@ -254,7 +254,7 @@ const Dashboard = () => {
                       </span>
                     </div>
                     <div className="flex justify-between items-center text-sm text-gray-500">
-                      <span>{product.brand} â€¢ {product.category}</span>
+                      <span>{product.brand} | {product.category}</span>
                     </div>
                   </div>
                 ))}
