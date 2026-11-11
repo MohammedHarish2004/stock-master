@@ -49,13 +49,19 @@ app.use('/api/backup', backupRoutes);
 app.use('/api/company', companyRoutes);
 app.use('/api/reports', reportRoutes);
 
-// Serve frontend in production
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../client/dist')));
-  app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
+// Serve frontend static build whenever available
+const distPath = path.join(__dirname, '../client/dist');
+app.use(express.static(distPath));
+app.get('*', (req, res, next) => {
+  if (req.path.startsWith('/api')) {
+    return next();
+  }
+  res.sendFile(path.join(distPath, 'index.html'), (err) => {
+    if (err) {
+      res.status(404).send('Stock Master: Frontend build not found or still starting.');
+    }
   });
-}
+});
 
 export const serverReady = new Promise((resolve, reject) => {
   server.once('error', reject);
