@@ -16,7 +16,7 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = async () => {
     try {
-      const res = await fetch('/api/auth/check-auth');
+      const res = await fetch('/api/auth/check-auth', { credentials: 'include' });
       if (res.ok) {
         const data = await res.json();
         setUser(data.user);
@@ -35,6 +35,7 @@ export const AuthProvider = ({ children }) => {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ username, password })
       });
       const data = await res.json();

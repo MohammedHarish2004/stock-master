@@ -6,6 +6,7 @@ export const getProducts = async (req, res) => {
     const products = await query('SELECT * FROM products ORDER BY id DESC');
     res.json(products);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Error fetching products' });
   }
 };
@@ -68,7 +69,7 @@ export const updateProduct = async (req, res) => {
       [productName, category, brand, costPrice, defaultSellingPrice, stockQty, req.params.id]
     );
     io.emit('product-updated');
-    res.json({ message: 'Product updated successfully' });
+    res.json({ message: 'Product updated' });
   } catch (error) {
     res.status(500).json({ message: 'Error updating product' });
   }
@@ -78,7 +79,7 @@ export const deleteProduct = async (req, res) => {
   try {
     await run('DELETE FROM products WHERE id = ?', [req.params.id]);
     io.emit('product-updated');
-    res.json({ message: 'Product deleted successfully' });
+    res.json({ message: 'Product deleted' });
   } catch (error) {
     res.status(500).json({ message: 'Error deleting product' });
   }

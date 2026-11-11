@@ -1,13 +1,11 @@
 import sqlite3 from 'sqlite3';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import fs from 'fs';
-import bcrypt from 'bcrypt';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dbPath = path.join(__dirname, 'database.sqlite');
+export const dbPath = process.env.SQLITE_DB_PATH || path.join(__dirname, 'database.sqlite');
 const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error connecting to database', err);
@@ -75,6 +73,7 @@ const initDb = async () => {
       saleId INTEGER,
       productId INTEGER,
       productName TEXT,
+      costPrice REAL,
       salePrice REAL,
       qty INTEGER,
       total REAL,
@@ -82,13 +81,25 @@ const initDb = async () => {
       FOREIGN KEY(productId) REFERENCES products(id)
     )`);
 
-    // Create Activation table
-    db.run(`CREATE TABLE IF NOT EXISTS activation (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      activationKey TEXT,
-      machineId TEXT,
-      activatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
-    )`);
+    // Safely add costPrice column to sale_items for existing databases
+    db.run('ALTER TABLE sale_items ADD COLUMN costPrice REAL', (err) => {
+      // Ignore error if column already exists
+    });
+
+    // Backfill costPrice for existing sale_items that have NULL costPrice
+    db.run(`UPDATE sale_items 
+            SET costPrice = (SELECT costPrice FROM products WHERE products.id = sale_items.productId) 
+            WHERE costPrice IS NULL AND productId IS NOT NULL`, (err) => {
+      // Ignore error
+    });
+
+    // Activation is currently disabled; keep the schema for possible re-use.
+    // db.run(`CREATE TABLE IF NOT EXISTS activation (
+    //   id INTEGER PRIMARY KEY AUTOINCREMENT,
+    //   activationKey TEXT,
+    //   machineId TEXT,
+    //   activatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+    // )`);
 
     // Create Company Info table
     db.run(`CREATE TABLE IF NOT EXISTS company_info (
@@ -103,15 +114,6 @@ const initDb = async () => {
       if (!row) {
         db.run("INSERT INTO company_info (name, address, phone) VALUES (?, ?, ?)", 
           ['Your Company Name', '123 Main Street', '+971 50 123 4567']);
-      }
-    });
-
-    // Check if admin exists
-    db.get("SELECT * FROM admin", async (err, row) => {
-      if (!row) {
-        const hashedPassword = await bcrypt.hash('admin123', 10);
-        db.run("INSERT INTO admin (username, password) VALUES (?, ?)", ['admin', hashedPassword]);
-        console.log('Default admin created: admin / admin123');
       }
     });
   });

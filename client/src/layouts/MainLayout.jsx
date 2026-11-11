@@ -1,7 +1,7 @@
-﻿import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, PlusCircle, Package, ShoppingCart, History, LogOut, Store, Tags } from 'lucide-react';
-import logo from '../assets/CD Logo2.png'
+import { LayoutDashboard, PlusCircle, Package, ShoppingCart, History, LogOut, Store, Tags, TrendingDown } from 'lucide-react';
+import logo from '../assets/CD Logo2.png';
 
 const MainLayout = () => {
   const { logout } = useAuth();
@@ -15,6 +15,7 @@ const MainLayout = () => {
       case '/sales': return 'Sales';
       case '/sales-history': return 'Sales History';
       case '/categories': return 'Categories';
+      case '/profit-loss': return 'Profit & Loss';
       default: return 'Dashboard';
     }
   };
@@ -26,6 +27,7 @@ const MainLayout = () => {
     { name: 'Sales', path: '/sales', icon: ShoppingCart },
     { name: 'Sales History', path: '/sales-history', icon: History },
     { name: 'Categories', path: '/categories', icon: Tags },
+    { name: 'Profit & Loss', path: '/profit-loss', icon: TrendingDown },
   ];
 
   return (
@@ -71,9 +73,12 @@ const MainLayout = () => {
         {/* Top Navbar */}
         <header className="bg-white/80 backdrop-blur-md border-b border-gray-200 px-8 py-4 flex justify-between items-center z-10 sticky top-0">
           <h2 className="text-2xl font-semibold text-gray-800">{getPageTitle()}</h2>
-          <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100 text-sm font-medium text-gray-600">
-            {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+          <div className="flex items-center space-x-2">
+            <div className="bg-white px-4 py-2 rounded-xl shadow-sm border border-gray-100 text-sm font-medium text-gray-600">
+              {new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+            </div>
           </div>
+
         </header>
 
         {/* Page Content */}

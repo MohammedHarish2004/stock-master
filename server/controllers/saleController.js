@@ -1,6 +1,10 @@
 import { query, get, run } from '../database/db.js';
 import { io } from '../server.js';
 
+// ────────────────────────────────────────────────────────────────────
+// ALL reads/writes go to SQLite (local-first).
+// ────────────────────────────────────────────────────────────────────
+
 export const getSales = async (req, res) => {
   try {
     const { customer, invoiceNo, product } = req.query;
@@ -59,7 +63,11 @@ export const getSaleById = async (req, res) => {
 
 export const createSale = async (req, res) => {
   try {
-    const { customerName, phone, deliveryDate, items, grandTotal } = req.body;
+    const { jobNo, customerName, phone, deliveryDate, items, grandTotal } = req.body;
+
+    if (typeof jobNo !== 'string' || !jobNo.trim()) {
+      return res.status(400).json({ message: 'Job No. is required' });
+    }
 
     // Generate Invoice Number
     const lastSale = await get('SELECT invoiceNo FROM sales ORDER BY id DESC LIMIT 1');
@@ -67,37 +75,34 @@ export const createSale = async (req, res) => {
     if (lastSale && lastSale.invoiceNo) {
       const match = lastSale.invoiceNo.match(/\d+$/);
       if (match) {
-        nextInvoiceNum = parseInt(match[0]) + 1;
+        nextInvoiceNum = Number(match[0]) + 1;
       }
     }
     const invoiceNo = `INV${nextInvoiceNum.toString().padStart(4, '0')}`;
 
-    // Start transaction
+    // Always write to SQLite first
     await run('BEGIN TRANSACTION');
-
-    // 1. Insert Sale
-    const saleResult = await run(`INSERT INTO sales (invoiceNo, customerName, phone, deliveryDate, grandTotal) 
-      VALUES (?, ?, ?, ?, ?)`,
-      [invoiceNo, customerName, phone, deliveryDate, grandTotal]
+    const saleResult = await run(`INSERT INTO sales (invoiceNo, jobNo, customerName, phone, deliveryDate, grandTotal) VALUES (?, ?, ?, ?, ?, ?)`,
+      [invoiceNo, jobNo.trim(), customerName, phone, deliveryDate, grandTotal]
     );
     const saleId = saleResult.lastID;
+    for (const item of items) {
+      // Lookup product costPrice at the moment of sale
+      const product = await get('SELECT costPrice FROM products WHERE id = ?', [item.productId]);
+      const currentCostPrice = product?.costPrice ?? (item.costPrice ?? 0);
 
-    // 2. Insert Sale Items and Reduce Stock
-    for (let item of items) {
-      await run(`INSERT INTO sale_items (saleId, productId, productName, salePrice, qty, total) 
-        VALUES (?, ?, ?, ?, ?, ?)`,
-        [saleId, item.productId, item.productName, item.salePrice, item.qty, item.total]
+      await run(`INSERT INTO sale_items (saleId, productId, productName, costPrice, salePrice, qty, total) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [saleId, item.productId, item.productName, currentCostPrice, item.salePrice, item.qty, item.total]
       );
-
       await run(`UPDATE products SET stockQty = stockQty - ? WHERE id = ?`, [item.qty, item.productId]);
     }
-
     await run('COMMIT');
+
     io.emit('sale-updated');
     io.emit('product-updated');
-    res.status(201).json({ message: 'Sale created successfully', invoiceNo });
+    return res.status(201).json({ message: 'Sale created', invoiceNo });
   } catch (error) {
-    await run('ROLLBACK');
+    try { await run('ROLLBACK'); } catch (_) {}
     console.error(error);
     res.status(500).json({ message: 'Error creating sale' });
   }
@@ -106,25 +111,29 @@ export const createSale = async (req, res) => {
 export const deleteSale = async (req, res) => {
   try {
     const saleId = req.params.id;
+
     await run('BEGIN TRANSACTION');
-
-    // Stock restoration disabled as requested
-    // const items = await query('SELECT * FROM sale_items WHERE saleId = ?', [saleId]);
-    // for (let item of items) {
-    //   await run(`UPDATE products SET stockQty = stockQty + ? WHERE id = ?`, [item.qty, item.productId]);
-    // }
-    // Delete sale items
+    const soldItems = await query(
+      'SELECT productId, SUM(qty) AS qty FROM sale_items WHERE saleId = ? GROUP BY productId',
+      [saleId]
+    );
+    for (const item of soldItems) {
+      await run(
+        'UPDATE products SET stockQty = COALESCE(stockQty, 0) + ? WHERE id = ?',
+        [item.qty, item.productId]
+      );
+    }
     await run('DELETE FROM sale_items WHERE saleId = ?', [saleId]);
-    // Delete sale
     await run('DELETE FROM sales WHERE id = ?', [saleId]);
-
     await run('COMMIT');
+
     io.emit('sale-updated');
     io.emit('product-updated');
-    res.json({ message: 'Sale deleted and stock restored successfully' });
+    return res.json({ message: 'Sale deleted' });
   } catch (error) {
-    await run('ROLLBACK');
-    res.status(500).json({ message: 'Error deleting sale' });
+    try { await run('ROLLBACK'); } catch (_) {}
+    console.error(error);
+    return res.status(500).json({ message: 'Error deleting sale' });
   }
 };
 
@@ -136,14 +145,22 @@ export const getDashboardStats = async (req, res) => {
     const pendingDeliveries = await get('SELECT COUNT(*) as count FROM sales WHERE deliveryDate >= date("now") OR deliveryDate IS NULL');
     const lowStockProducts = await query('SELECT * FROM products WHERE stockQty <= 5 ORDER BY stockQty ASC LIMIT 10');
     const latestSales = await query('SELECT * FROM sales ORDER BY id DESC LIMIT 5');
-
+    // New profit & loss calculations
+    const revenueRow = await get('SELECT SUM(grandTotal) as revenue FROM sales');
+    const cogsRow = await get(`SELECT SUM(COALESCE(si.costPrice, p.costPrice, 0) * si.qty) as cogs
+      FROM sale_items si
+      LEFT JOIN products p ON si.productId = p.id`);
+    const profit = (revenueRow.revenue || 0) - (cogsRow.cogs || 0);
     res.json({
       totalProducts: totalProducts.count || 0,
       totalCategory: totalCategory.count || 0,
       todaySales: todaySales.total || 0,
       pendingDeliveries: pendingDeliveries.count || 0,
       lowStockProducts,
-      latestSales
+      latestSales,
+      revenue: revenueRow.revenue || 0,
+      cogs: cogsRow.cogs || 0,
+      profit,
     });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching dashboard stats' });

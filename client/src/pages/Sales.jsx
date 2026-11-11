@@ -8,6 +8,7 @@ const Sales = () => {
   
   // Customer Details
   const [customerDetails, setCustomerDetails] = useState({
+    jobNo: '',
     customerName: '',
     phone: '',
     deliveryDate: new Date().toISOString().split('T')[0], // Default today
@@ -123,10 +124,16 @@ const Sales = () => {
       return;
     }
 
+    if (!customerDetails.jobNo.trim()) {
+      toast.error('Job No. is required');
+      return;
+    }
+
     setIsSaving(true);
     try {
       const saleData = {
         ...customerDetails,
+        jobNo: customerDetails.jobNo.trim(),
         items: cart,
         grandTotal
       };
@@ -142,6 +149,7 @@ const Sales = () => {
         toast.success(`Sale completed! Invoice: ${data.invoiceNo}`);
         // Clear form
         setCustomerDetails({
+          jobNo: '',
           customerName: '',
           phone: '',
           deliveryDate: new Date().toISOString().split('T')[0]
@@ -174,7 +182,19 @@ const Sales = () => {
             <span className="bg-[#00868e]/10 w-8 h-8 rounded-lg flex items-center justify-center mr-2 text-[#00868e] font-bold">1</span>
             Customer Details
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Job No. *</label>
+              <input
+                type="text"
+                name="jobNo"
+                value={customerDetails.jobNo}
+                onChange={handleCustomerChange}
+                required
+                className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] transition-colors outline-none"
+                placeholder="Job No."
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name *</label>
               <input

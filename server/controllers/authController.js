@@ -1,8 +1,54 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
-import { get } from '../database/db.js';
+import { get, run } from '../database/db.js';
+import { JWT_SECRET } from '../util/authConfig.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey_change_in_production';
+export const setupStatus = async (req, res) => {
+  try {
+    const admin = await get('SELECT id FROM admin LIMIT 1');
+    res.json({ needsSetup: !admin });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to check initial account setup' });
+  }
+};
+
+export const setupFirstAdmin = async (req, res) => {
+  const remoteAddress = req.socket.remoteAddress;
+  if (!['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(remoteAddress)) {
+    return res.status(403).json({ message: 'Initial account setup is only available on this computer' });
+  }
+
+  const { username, password } = req.body;
+  if (typeof username !== 'string' || !username.trim() || username.trim().length > 50) {
+    return res.status(400).json({ message: 'Username must be between 1 and 50 characters' });
+  }
+  if (typeof password !== 'string' || password.length < 12) {
+    return res.status(400).json({ message: 'Password must be at least 12 characters' });
+  }
+
+  try {
+    await run('BEGIN IMMEDIATE');
+    const existingAdmin = await get('SELECT id FROM admin LIMIT 1');
+    if (existingAdmin) {
+      await run('ROLLBACK');
+      return res.status(409).json({ message: 'An admin account is already configured' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+    await run('INSERT INTO admin (username, password) VALUES (?, ?)', [username.trim(), hashedPassword]);
+    await run('COMMIT');
+    return res.status(201).json({ message: 'Admin account created. You can now sign in.' });
+  } catch (error) {
+    try {
+      await run('ROLLBACK');
+    } catch (rollbackError) {
+      console.error('Failed to roll back admin setup:', rollbackError);
+    }
+    console.error(error);
+    return res.status(500).json({ message: 'Failed to create admin account' });
+  }
+};
 
 export const login = async (req, res) => {
   try {

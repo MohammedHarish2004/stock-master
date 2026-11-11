@@ -1,7 +1,10 @@
 import express from 'express';
 import { get, run } from '../database/db.js';
+import { authMiddleware } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
+
+router.use(authMiddleware);
 
 // Get company info
 router.get('/', async (req, res) => {
