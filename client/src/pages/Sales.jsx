@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { ShoppingCart, Plus, Trash2, Search, Check, Save } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { socket } from '../socket';
@@ -167,7 +167,11 @@ const Sales = () => {
   };
 
   const filteredSearchProducts = search 
-    ? products.filter(p => p.productName.toLowerCase().includes(search.toLowerCase()))
+    ? products.filter(p => 
+        p.productName.toLowerCase().includes(search.toLowerCase()) ||
+        (p.barcode && p.barcode.toLowerCase().includes(search.toLowerCase())) ||
+        (p.brand && p.brand.toLowerCase().includes(search.toLowerCase()))
+      )
     : [];
 
   return (
@@ -245,7 +249,7 @@ const Sales = () => {
             <input
               type="text"
               className="block w-full pl-10 pr-3 py-3 border border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:bg-white focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] transition-colors"
-              placeholder="Search product by name to add..."
+              placeholder="Search product by name or scan barcode..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

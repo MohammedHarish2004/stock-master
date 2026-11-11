@@ -23,33 +23,45 @@ export const getProductById = async (req, res) => {
 
 export const createProduct = async (req, res) => {
   try {
-    const { productName, category, brand, costPrice, defaultSellingPrice, stockQty } = req.body;
+    const { barcode, productName, category, brand, costPrice, defaultSellingPrice, stockQty } = req.body;
     
-    // Check if exact same product (same name AND same category) exists (case-insensitive)
-    const existing = await get(
-      'SELECT * FROM products WHERE LOWER(productName) = LOWER(?) AND LOWER(category) = LOWER(?)',
-      [productName, category]
-    );
+    // Check if matching product exists:
+    // 1. By non-empty barcode OR
+    // 2. By exact same product (same name AND same category) (case-insensitive)
+    let existing = null;
+    const cleanBarcode = barcode ? String(barcode).trim() : null;
+
+    if (cleanBarcode) {
+      existing = await get('SELECT * FROM products WHERE barcode = ?', [cleanBarcode]);
+    }
+
+    if (!existing) {
+      existing = await get(
+        'SELECT * FROM products WHERE LOWER(productName) = LOWER(?) AND LOWER(category) = LOWER(?)',
+        [productName, category]
+      );
+    }
     
     if (existing) {
-      // Same name + same category → add stock
+      // Same product → add stock and update details
       const newStock = parseInt(existing.stockQty) + parseInt(stockQty);
       await run(`UPDATE products SET 
+        barcode = COALESCE(?, barcode),
         stockQty = ?, 
         brand = ?, 
         costPrice = ?, 
         defaultSellingPrice = ?, 
         updatedAt = CURRENT_TIMESTAMP 
         WHERE id = ?`, 
-        [newStock, brand, costPrice, defaultSellingPrice, existing.id]
+        [cleanBarcode, newStock, brand, costPrice, defaultSellingPrice, existing.id]
       );
       io.emit('product-updated');
-      res.json({ message: `Stock added to existing product. New qty: ${newStock}`, type: 'update' });
+      res.json({ message: `Stock added to existing product (${existing.productName}). New qty: ${newStock}`, type: 'update' });
     } else {
-      // Different name OR different category → create new product
-      await run(`INSERT INTO products (productName, category, brand, costPrice, defaultSellingPrice, stockQty) 
-        VALUES (?, ?, ?, ?, ?, ?)`, 
-        [productName, category, brand, costPrice, defaultSellingPrice, stockQty]
+      // New product
+      await run(`INSERT INTO products (barcode, productName, category, brand, costPrice, defaultSellingPrice, stockQty) 
+        VALUES (?, ?, ?, ?, ?, ?, ?)`, 
+        [cleanBarcode, productName, category, brand, costPrice, defaultSellingPrice, stockQty]
       );
       io.emit('product-updated');
       res.status(201).json({ message: 'New product created successfully', type: 'create' });
@@ -62,12 +74,22 @@ export const createProduct = async (req, res) => {
 
 export const updateProduct = async (req, res) => {
   try {
-    const { productName, category, brand, costPrice, defaultSellingPrice, stockQty } = req.body;
-    await run(`UPDATE products SET 
-      productName = ?, category = ?, brand = ?, costPrice = ?, defaultSellingPrice = ?, stockQty = ?, updatedAt = CURRENT_TIMESTAMP 
-      WHERE id = ?`, 
-      [productName, category, brand, costPrice, defaultSellingPrice, stockQty, req.params.id]
-    );
+    const { barcode, productName, category, brand, costPrice, defaultSellingPrice, stockQty } = req.body;
+    const cleanBarcode = barcode !== undefined ? (barcode ? String(barcode).trim() : null) : undefined;
+
+    if (cleanBarcode !== undefined) {
+      await run(`UPDATE products SET 
+        barcode = ?, productName = ?, category = ?, brand = ?, costPrice = ?, defaultSellingPrice = ?, stockQty = ?, updatedAt = CURRENT_TIMESTAMP 
+        WHERE id = ?`, 
+        [cleanBarcode, productName, category, brand, costPrice, defaultSellingPrice, stockQty, req.params.id]
+      );
+    } else {
+      await run(`UPDATE products SET 
+        productName = ?, category = ?, brand = ?, costPrice = ?, defaultSellingPrice = ?, stockQty = ?, updatedAt = CURRENT_TIMESTAMP 
+        WHERE id = ?`, 
+        [productName, category, brand, costPrice, defaultSellingPrice, stockQty, req.params.id]
+      );
+    }
     io.emit('product-updated');
     res.json({ message: 'Product updated' });
   } catch (error) {

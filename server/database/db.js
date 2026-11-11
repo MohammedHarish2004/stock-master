@@ -27,6 +27,7 @@ const initDb = async () => {
     // Create Products table with composite unique on (productName, category)
     db.run(`CREATE TABLE IF NOT EXISTS products (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      barcode TEXT,
       productName TEXT,
       category TEXT,
       brand TEXT,
@@ -38,6 +39,11 @@ const initDb = async () => {
       updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
       UNIQUE(productName, category)
     )`);
+
+    // Add barcode column to existing products safely
+    db.run('ALTER TABLE products ADD COLUMN barcode TEXT', (err) => {
+      // Ignore error if column already exists
+    });
 
     // Create Categories table
     db.run(`CREATE TABLE IF NOT EXISTS categories (

@@ -7,12 +7,15 @@ import { io } from '../server.js';
 
 export const getSales = async (req, res) => {
   try {
-    const { customer, invoiceNo, product } = req.query;
+    const { customer, invoiceNo, product, barcode } = req.query;
 
     let baseQuery = `
-      SELECT s.*, GROUP_CONCAT(si.productName) as productNames 
+      SELECT s.*, 
+             GROUP_CONCAT(DISTINCT si.productName) as productNames,
+             GROUP_CONCAT(DISTINCT p.barcode) as barcodes
       FROM sales s 
       LEFT JOIN sale_items si ON s.id = si.saleId 
+      LEFT JOIN products p ON si.productId = p.id
     `;
 
     let whereClauses = [];
@@ -31,6 +34,16 @@ export const getSales = async (req, res) => {
     if (product) {
       whereClauses.push(`s.id IN (SELECT saleId FROM sale_items WHERE productName LIKE ?)`);
       params.push(`%${product}%`);
+    }
+
+    if (barcode) {
+      whereClauses.push(`s.id IN (
+        SELECT si_sub.saleId 
+        FROM sale_items si_sub 
+        JOIN products p_sub ON si_sub.productId = p_sub.id 
+        WHERE p_sub.barcode LIKE ?
+      )`);
+      params.push(`%${barcode}%`);
     }
 
     if (whereClauses.length > 0) {
@@ -52,7 +65,12 @@ export const getSaleById = async (req, res) => {
     const sale = await get('SELECT * FROM sales WHERE id = ?', [req.params.id]);
     if (!sale) return res.status(404).json({ message: 'Sale not found' });
 
-    const items = await query('SELECT * FROM sale_items WHERE saleId = ?', [sale.id]);
+    const items = await query(`
+      SELECT si.*, p.barcode 
+      FROM sale_items si
+      LEFT JOIN products p ON si.productId = p.id
+      WHERE si.saleId = ?
+    `, [sale.id]);
     sale.items = items;
 
     res.json(sale);

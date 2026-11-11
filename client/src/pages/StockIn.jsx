@@ -1,9 +1,10 @@
-﻿import { useState, useEffect } from 'react';
-import { PackagePlus, Save, RotateCcw } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { PackagePlus, Save, RotateCcw, ScanBarcode } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const StockIn = () => {
   const initialState = {
+    barcode: '',
     productName: '',
     category: '',
     brand: '',
@@ -34,6 +35,23 @@ const StockIn = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // If barcode is entered or scanned, auto-fill existing product details if found
+    if (name === 'barcode' && value.trim()) {
+      const match = products.find(p => p.barcode && p.barcode.toLowerCase() === value.trim().toLowerCase());
+      if (match) {
+        setFormData(prev => ({
+          ...prev,
+          barcode: value,
+          productName: match.productName || prev.productName,
+          category: match.category || prev.category,
+          brand: match.brand || prev.brand,
+          costPrice: match.costPrice !== undefined ? match.costPrice : prev.costPrice,
+          defaultSellingPrice: match.defaultSellingPrice !== undefined ? match.defaultSellingPrice : prev.defaultSellingPrice,
+        }));
+        toast.success(`Existing product found: ${match.productName}`);
+      }
+    }
   };
 
   const handleClear = () => {
@@ -94,6 +112,22 @@ const StockIn = () => {
 
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="col-span-1 md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-1.5">
+                <ScanBarcode className="w-4 h-4 text-[#00868e]" />
+                Barcode / SKU <span className="text-xs text-gray-400 font-normal">(Optional — scan or type to auto-detect product)</span>
+              </label>
+              <input
+                type="text"
+                name="barcode"
+                value={formData.barcode}
+                onChange={handleChange}
+                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] transition-colors focus:bg-white outline-none font-mono"
+                placeholder="Scan or enter barcode..."
+                autoFocus
+              />
+            </div>
+
             <div className="col-span-1 md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-2">Product Name</label>
               <input

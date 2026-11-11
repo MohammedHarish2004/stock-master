@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Edit, Trash2, Package, PlusCircle, Filter, FileText, X } from 'lucide-react';
+import { Search, Edit, Trash2, Package, PlusCircle, Filter, FileText, X, ScanBarcode } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Pagination from '../components/Pagination';
 import { socket } from '../socket';
@@ -10,6 +10,7 @@ const Products = () => {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [barcodeSearch, setBarcodeSearch] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('All');
   const [stockSort, setStockSort] = useState('Default');
   const [currentPage, setCurrentPage] = useState(1);
@@ -167,6 +168,7 @@ const Products = () => {
   const openEditProduct = (product) => {
     setSelectedProduct(product);
     setEditForm({
+      barcode: product.barcode || '',
       productName: product.productName,
       category: product.category,
       brand: product.brand,
@@ -203,11 +205,16 @@ const Products = () => {
   const categoryOptions = ['All', ...new Set(products.map(p => p.category))];
 
   const filteredProducts = products.filter(p => {
-    const matchesSearch = p.productName.toLowerCase().includes(search.toLowerCase()) ||
+    const matchesSearch = !search || (
+      p.productName.toLowerCase().includes(search.toLowerCase()) ||
       p.brand.toLowerCase().includes(search.toLowerCase()) ||
-      p.category.toLowerCase().includes(search.toLowerCase());
+      p.category.toLowerCase().includes(search.toLowerCase())
+    );
+    const matchesBarcode = !barcodeSearch || (
+      p.barcode && p.barcode.toLowerCase().includes(barcodeSearch.trim().toLowerCase())
+    );
     const matchesCategory = categoryFilter === 'All' || p.category === categoryFilter;
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesBarcode && matchesCategory;
   });
 
   const sortedProducts = [...filteredProducts].sort((a, b) => {
@@ -221,7 +228,7 @@ const Products = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [search, categoryFilter, stockSort]);
+  }, [search, barcodeSearch, categoryFilter, stockSort]);
 
   const getRowStyle = (stock) => {
     if (stock === 0) return 'bg-red-50 hover:bg-red-100';
@@ -233,21 +240,57 @@ const Products = () => {
     <div className="space-y-6">
       {/* Header and Search */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 items-center">
 
           {/* Title */}
-          <div className="lg:col-span-3 flex items-center gap-3">
+          <div className="lg:col-span-2 flex items-center gap-3">
             <div className="bg-[#00868e]/10 p-2 rounded-xl">
               <Package className="text-[#00868e] w-6 h-6" />
             </div>
-            <h2 className="text-xl font-bold text-gray-800">Inventory Management</h2>
+            <h2 className="text-xl font-bold text-gray-800">Inventory</h2>
           </div>
 
           {/* Total */}
-          <div className="lg:col-span-2">
-            <span className="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-semibold">
+          <div className="lg:col-span-1">
+            <span className="inline-block px-3 py-2 bg-gray-100 text-gray-700 rounded-xl text-xs font-semibold whitespace-nowrap">
               Total : {filteredProducts.length}
             </span>
+          </div>
+
+          {/* Barcode Searcher */}
+          <div className="lg:col-span-3">
+            <div className="relative">
+              <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#00868e] pointer-events-none" />
+              <input
+                type="text"
+                value={barcodeSearch}
+                onChange={(e) => setBarcodeSearch(e.target.value)}
+                placeholder="Scan / enter barcode..."
+                className="w-full pl-9 pr-8 py-2 border border-gray-200 rounded-xl bg-gray-50 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] font-mono text-sm"
+              />
+              {barcodeSearch && (
+                <button
+                  onClick={() => setBarcodeSearch('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* General Search */}
+          <div className="lg:col-span-2">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search name/brand..."
+                className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl bg-gray-50 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] text-sm"
+              />
+            </div>
           </div>
 
           {/* Category */}
@@ -257,7 +300,7 @@ const Products = () => {
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 border border-gray-200 rounded-xl bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] appearance-none"
+                className="w-full pl-9 pr-8 py-2 border border-gray-200 rounded-xl bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] appearance-none text-sm"
               >
                 {categoryOptions.map((c) => (
                   <option key={c} value={c}>
@@ -275,7 +318,7 @@ const Products = () => {
               <select
                 value={stockSort}
                 onChange={(e) => setStockSort(e.target.value)}
-                className="w-full pl-9 pr-8 py-2 border border-gray-200 rounded-xl bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] appearance-none"
+                className="w-full pl-9 pr-8 py-2 border border-gray-200 rounded-xl bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] appearance-none text-sm"
               >
                 <option value="Default">Sort Stock</option>
                 <option value="HighToLow">Stock: High to Low</option>
@@ -284,19 +327,6 @@ const Products = () => {
             </div>
           </div>
 
-          {/* Search */}
-          <div className="lg:col-span-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search products..."
-                className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl bg-gray-50 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e]"
-              />
-            </div>
-          </div>
         </div>
       </div>
 
@@ -320,6 +350,7 @@ const Products = () => {
               <thead className="bg-gray-50/80 backdrop-blur-sm sticky top-0">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Product</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Barcode</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Cost (₹)</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Price (₹)</th>
@@ -333,6 +364,15 @@ const Products = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="font-medium text-gray-900">{p.productName}</div>
                       <div className="text-xs text-gray-500">{p.brand}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {p.barcode ? (
+                        <span className="font-mono text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-md border border-gray-200">
+                          {p.barcode}
+                        </span>
+                      ) : (
+                        <span className="text-xs text-gray-400 italic">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{p.category}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">{p.costPrice.toFixed(2)}</td>
@@ -491,6 +531,12 @@ const Products = () => {
               <button onClick={() => setShowEditProduct(false)} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
             </div>
             <div className="grid grid-cols-2 gap-4 mb-5">
+              <div className="col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Barcode / SKU</label>
+                <input type="text" value={editForm.barcode || ''} onChange={e => setEditForm(f => ({ ...f, barcode: e.target.value }))}
+                  placeholder="Optional barcode / SKU"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary font-mono" />
+              </div>
               <div className="col-span-2">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
                 <input type="text" value={editForm.productName || ''} onChange={e => setEditForm(f => ({ ...f, productName: e.target.value }))}

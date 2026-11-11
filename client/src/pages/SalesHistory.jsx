@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { History, Search, FileText, X, Filter, Trash2 } from 'lucide-react';
+import { History, Search, FileText, X, Filter, Trash2, ScanBarcode } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Pagination from '../components/Pagination';
 import { socket } from '../socket';
@@ -11,6 +11,7 @@ const SalesHistory = () => {
   const [customerSearch, setCustomerSearch] = useState('');
   const [invoiceSearch, setInvoiceSearch] = useState('');
   const [productSearch, setProductSearch] = useState('');
+  const [barcodeSearch, setBarcodeSearch] = useState('');
   const [dateFilter, setDateFilter] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -50,14 +51,15 @@ const SalesHistory = () => {
       fetchSales();
     }, 400);
     return () => clearTimeout(delayDebounceFn);
-  }, [customerSearch, invoiceSearch, productSearch]);
+  }, [customerSearch, invoiceSearch, productSearch, barcodeSearch]);
 
   const fetchSales = async () => {
     try {
       const queryParams = new URLSearchParams({
         customer: customerSearch,
         invoiceNo: invoiceSearch,
-        product: productSearch
+        product: productSearch,
+        barcode: barcodeSearch
       }).toString();
 
       const res = await fetch(`/api/sales?${queryParams}`);
@@ -284,7 +286,7 @@ const SalesHistory = () => {
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [customerSearch, invoiceSearch, productSearch, dateFilter]);
+  }, [customerSearch, invoiceSearch, productSearch, barcodeSearch, dateFilter]);
 
   return (
     <div className="space-y-6">
@@ -301,69 +303,83 @@ const SalesHistory = () => {
           </div>
 
           {/* Total Sales */}
-          <div className="col-span-full xl:col-span-2">
-            <span className="inline-block px-4 py-2 bg-gray-100 text-gray-700 rounded-xl text-sm font-semibold">
+          <div className="col-span-full xl:col-span-1">
+            <span className="inline-block px-3 py-2 bg-gray-100 text-gray-700 rounded-xl text-xs font-semibold whitespace-nowrap">
               Sales : {filteredSales.length}
             </span>
           </div>
 
           {/* Date Filter */}
           <div className="col-span-full xl:col-span-2">
-          <div className="relative">
-            <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-            <select
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 border border-gray-200 rounded-xl bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] appearance-none"
-            >
-              <option value="All">All Time</option>
-              <option value="Today">Today</option>
-              <option value="Last 7 Days">Last 7 Days</option>
-              <option value="This Month">This Month</option>
-            </select>
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value)}
+                className="w-full pl-9 pr-8 py-2 border border-gray-200 rounded-xl bg-gray-50 text-gray-700 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] appearance-none text-sm"
+              >
+                <option value="All">All Time</option>
+                <option value="Today">Today</option>
+                <option value="Last 7 Days">Last 7 Days</option>
+                <option value="This Month">This Month</option>
+              </select>
+            </div>
           </div>
+
+          {/* Barcode Search */}
+          <div className="col-span-full xl:col-span-2">
+            <div className="relative">
+              <ScanBarcode className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#00868e] pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Scan / Barcode..."
+                value={barcodeSearch}
+                onChange={(e) => setBarcodeSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl bg-gray-50 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] text-sm font-mono"
+              />
+            </div>
           </div>
 
           {/* Customer Search */}
           <div className="col-span-full xl:col-span-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Customer / Phone..."
-              value={customerSearch}
-              onChange={(e) => setCustomerSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl bg-gray-50 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e]"
-            />
-          </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Customer / Phone..."
+                value={customerSearch}
+                onChange={(e) => setCustomerSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl bg-gray-50 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] text-sm"
+              />
+            </div>
           </div>
 
           {/* Invoice Search */}
-          <div className="col-span-full xl:col-span-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Invoice No..."
-              value={invoiceSearch}
-              onChange={(e) => setInvoiceSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl bg-gray-50 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e]"
-            />
-          </div>
+          <div className="col-span-full xl:col-span-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Invoice..."
+                value={invoiceSearch}
+                onChange={(e) => setInvoiceSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl bg-gray-50 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] text-sm"
+              />
+            </div>
           </div>
 
           {/* Product Search */}
           <div className="col-span-full xl:col-span-2">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Product..."
-              value={productSearch}
-              onChange={(e) => setProductSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl bg-gray-50 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e]"
-            />
-          </div>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+              <input
+                type="text"
+                placeholder="Product..."
+                value={productSearch}
+                onChange={(e) => setProductSearch(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-xl bg-gray-50 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#00868e]/20 focus:border-[#00868e] text-sm"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -387,6 +403,7 @@ const SalesHistory = () => {
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Invoice No</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Customer</th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Products / Barcode</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Phone</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Dates</th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Grand Total</th>
@@ -400,6 +417,18 @@ const SalesHistory = () => {
                       <div className="font-bold text-[#00868e] bg-[#00868e]/10 px-2 py-1 rounded-md text-sm inline-block">{s.invoiceNo}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{s.customerName || 'Walk-in'}</td>
+                    <td className="px-6 py-4 text-sm text-gray-700 max-w-xs">
+                      <div className="truncate font-medium">{s.productNames || '-'}</div>
+                      {s.barcodes && (
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {s.barcodes.split(',').filter(Boolean).map((bc, idx) => (
+                            <span key={idx} className="font-mono text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded border border-gray-200">
+                              {bc.trim()}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{s.phone || '-'}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <div>Sale: {new Date(s.saleDate).toLocaleDateString()}</div>
@@ -507,6 +536,7 @@ const SalesHistory = () => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Product</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">Barcode</th>
                       <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500">Price (₹)</th>
                       <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500">Qty</th>
                       <th className="px-4 py-3 text-right text-xs font-semibold text-gray-500">Total (₹)</th>
@@ -516,6 +546,13 @@ const SalesHistory = () => {
                     {selectedInvoice.items?.map((item) => (
                       <tr key={item.id}>
                         <td className="px-4 py-3 text-sm font-medium text-gray-900">{item.productName}</td>
+                        <td className="px-4 py-3 text-xs font-mono text-gray-500">
+                          {item.barcode ? (
+                            <span className="bg-gray-100 px-1.5 py-0.5 rounded border border-gray-200">{item.barcode}</span>
+                          ) : (
+                            <span className="text-gray-300">-</span>
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-sm text-gray-600 text-right">{item.salePrice.toFixed(2)}</td>
                         <td className="px-4 py-3 text-sm text-gray-600 text-center">{item.qty}</td>
                         <td className="px-4 py-3 text-sm font-bold text-gray-900 text-right">{item.total.toFixed(2)}</td>
