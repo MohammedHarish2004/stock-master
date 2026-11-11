@@ -1,4 +1,4 @@
-﻿import { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Tags, Plus, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { socket } from '../socket';
@@ -35,11 +35,12 @@ const Categories = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name: newCategory.trim() })
       });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        toast.success('Category added');
+        toast.success(data.message || 'Category added');
         setNewCategory('');
       } else {
-        toast.error('Failed to add category');
+        toast.error(data.message || 'Failed to add category');
       }
     } catch (error) {
       toast.error('Network error');
@@ -52,10 +53,11 @@ const Categories = () => {
     if (!window.confirm('Are you sure you want to delete this category?')) return;
     try {
       const res = await fetch(`/api/categories/${id}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
       if (res.ok) {
-        toast.success('Category deleted');
+        toast.success(data.message || 'Category deleted');
       } else {
-        toast.error('Failed to delete category');
+        toast.error(data.message || 'Failed to delete category');
       }
     } catch (error) {
       toast.error('Network error');

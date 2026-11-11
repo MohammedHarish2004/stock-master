@@ -30,7 +30,7 @@ export const deleteCategory = async (req, res) => {
 
     const productCount = await get('SELECT COUNT(*) AS count FROM products WHERE category = ?', [category.name]);
     if (productCount.count > 0) {
-      return res.status(409).json({ message: 'Cannot delete a category while products use it' });
+      return res.status(409).json({ message: `Cannot delete "${category.name}" because ${productCount.count} product(s) are using it. Please delete or reassign those products first.` });
     }
 
     await run('DELETE FROM categories WHERE id = ?', [req.params.id]);
